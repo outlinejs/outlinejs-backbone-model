@@ -1,4 +1,4 @@
-import Backbone from 'backbone'; //eslint-disable-line
+import Backbone from 'backbone';
 import querystring from 'querystring';
 import url from 'url';
 import http from 'http';
@@ -92,7 +92,7 @@ export function backboneSync(method, model, options) {
       }
     }
 
-    if (options.data == null && model && (method === 'create' || method === 'update' || method === 'patch')) {
+    if (model && (method === 'create' || method === 'update' || method === 'patch')) {
       params.headers['Content-Type'] = 'application/json';
       bodyData = JSON.stringify(options.attrs || model.toJSON(options));
       params.headers['Content-Length'] = Buffer.byteLength(bodyData);
@@ -102,7 +102,7 @@ export function backboneSync(method, model, options) {
       params.headers = Object.assign(params.headers, options.headers);
     }
 
-    if (params.method === 'GET') {
+    if (options.data !== null) {
       qs = querystring.stringify(options.data);
     }
 
@@ -121,15 +121,19 @@ export function backboneSync(method, model, options) {
     var req = protocol.request(params, (res) => {
       var paginator = parseLinkHeader(res.headers.link);
       var responseText = '';
+
       res.setEncoding('utf8');
       res.on('data', function (chunk) {
         responseText += chunk;
       });
+
       res.on('end', () => {
         var jData;
-        if (res.headers['content-type'].includes('application/json')) {
+
+        if (res.headers['content-type'] && res.headers['content-type'].includes('application/json')) {
           jData = JSON.parse(responseText);
         }
+
         if (res.statusCode >= 200 && res.statusCode < 300 || res.statusCode === 304) {
           options.httpResponse = {
             headers: res.headers,
